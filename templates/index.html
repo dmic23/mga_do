@@ -1,0 +1,63 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" ng-app="mga">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0' name='viewport' />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+	<title>Melbourne Guitar Academy</title>
+	<link rel="apple-touch-icon-precomposed" sizes="57x57" href="{% static 'favicon/apple-touch-icon-57x57.png' %}" />
+	<link rel="apple-touch-icon-precomposed" sizes="114x114" href="{% static 'favicon/apple-touch-icon-114x114.png' %}" />
+	<link rel="apple-touch-icon-precomposed" sizes="72x72" href="{% static 'favicon/apple-touch-icon-72x72.png' %}" />
+	<link rel="apple-touch-icon-precomposed" sizes="144x144" href="{% static 'favicon/apple-touch-icon-144x144.png' %}" />
+	<link rel="apple-touch-icon-precomposed" sizes="120x120" href="{% static 'favicon/apple-touch-icon-120x120.png' %}" />
+	<link rel="apple-touch-icon-precomposed" sizes="152x152" href="{% static 'favicon/apple-touch-icon-152x152.png' %}" />
+	<link rel="icon" type="image/png" href="{% static 'favicon/favicon-32x32.png' %}" sizes="32x32" />
+	<link rel="icon" type="image/png" href="{% static 'favicon/favicon-16x16.png' %}" sizes="16x16" />
+	<meta name="application-name" content="&nbsp;"/>
+	<meta name="msapplication-TileColor" content="#FFFFFF" />
+	<meta name="msapplication-TileImage" content="{% static 'favicon/mstile-144x144.png' %}" />
+
+<!-- 	<link rel="stylesheet" href="{% static 'css/bower.min.gz.css' %}">
+	<link rel="stylesheet" href="{% static 'css/main.min.gz.css' %}">
+ -->	
+ 	{% include 'css.html' %}
+	<link href="http://maxcdn.bootstrapcdn.com/font-awesome/latest/css/font-awesome.min.css" rel="stylesheet">
+	<link href='https://fonts.googleapis.com/css?family=Muli:400,300' rel='stylesheet' type='text/css'>
+
+</head>
+<body>
+	{% block content %}
+		<div class="wrapper" ui-view></div>
+	{% endblock %}
+<script>
+	var staticUrl = '{{ STATIC_URL|escapejs }}';
+	var mediaUrl  = '{{ MEDIA_URL|escapejs }}';
+
+	function static_path(path) {
+		return staticUrl + path;
+	};
+
+	function media_path(path) {
+		return mediaUrl + path;
+	};
+
+	// if('serviceWorker' in navigator){
+	// 	navigator.serviceWorker.register(staticUrl+'js/service-worker.js')
+	// 		.then(function(registration){
+	// 			console.log('Service Worker', registration);
+	// 		})
+	// 		.catch(function(err){
+	// 			console.log('Failed to register', err);
+	// 		});
+	// };
+
+</script>
+	{% include 'javascripts.html' %}
+	<!-- <script src="{% static 'js/bower.gz.min.js' %}"></script>
+	<script src="{% static 'js/main.min.gz.js' %}"></script> -->
+</body>
+</html>
