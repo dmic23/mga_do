@@ -4,7 +4,7 @@ from django.utils import timezone
 from rest_framework import serializers, status
 from rest_framework.response import Response
 from schedule.models import Course, CourseSchedule
-from users.serializers import UserSerializer, LocationSerializer
+from users.serializers import SimpleUserSerializer, LocationSerializer
 from users.tasks import send_schedule_course_confirm
 
 class CourseSerializer(serializers.ModelSerializer):
@@ -19,7 +19,7 @@ class CourseSerializer(serializers.ModelSerializer):
 
 class CourseScheduleSerializer(serializers.ModelSerializer):
     course = CourseSerializer(required=False)
-    student = UserSerializer(many=True, required=False)
+    student = SimpleUserSerializer(many=True, required=False)
     schedule_created_by = serializers.CharField(required=False)
     schedule_recurring_user = serializers.PrimaryKeyRelatedField(many=True, read_only=True, required=False)
 

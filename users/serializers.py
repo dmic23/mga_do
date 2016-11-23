@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from rest_framework.validators import UniqueValidator
 from schedule.models import CourseSchedule
 # from schedule.serializers import CourseScheduleSerializer
-from users.models import User, Location, StudentNote, StudentGoal, StudentPracticeLog, StudentObjective, StudentWishList, StudentMaterial, StudentPlan, StudentPlanFile
+from users.models import User, Location, StudentNote, StudentGoal, StudentPracticeLog, StudentObjective, StudentWishList, StudentMaterial, StudentPlan, StudentPlanSection, StudentPlanFile
 from users.tasks import send_basic_email
 
 class StudentGoalSerializer(serializers.ModelSerializer):
@@ -104,6 +104,7 @@ class StudentMaterialSerializer(serializers.ModelSerializer):
             send_basic_email.delay(student_material.student.id, 'UPD')
         except:
             pass
+
         student_material.save()
         return student_material
 
@@ -130,90 +131,123 @@ class StudentMaterialSerializer(serializers.ModelSerializer):
                         instance.student_group.remove(student)
 
         instance.save()
-
         return instance
 
 class StudentPlanFileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = StudentPlanFile
-        fields = ('id', 'student_plan', 'plan_file', 'plan_file_name', 'plan_file_created', 'plan_file_created_by', 'plan_file_updated', 'plan_file_updated_by',)
+        fields = ('id', 'plan_section', 'plan_file', 'plan_file_name', 'plan_file_created', 'plan_file_created_by', 'plan_file_updated', 'plan_file_updated_by',)
 
 
-class StudentPlanSerializer(serializers.ModelSerializer):
-
-    students = SimpleUserSerializer(many=True, required=False, read_only=True)
-    student_plan_file = StudentPlanFileSerializer(many=True)
-    plan_created_by = serializers.CharField(required=False)
-    plan_updated_by = serializers.CharField(required=False)
+class StudentPlanSectionSerializer(serializers.ModelSerializer):
+    
+    plan_section_file = StudentPlanFileSerializer(many=True, required=False, allow_null=True, read_only=True)
+    section_created_by = serializers.CharField(required=False)
+    section_updated_by = serializers.CharField(required=False, allow_null=True)
 
     class Meta:
-        model = StudentPlan
-        fields = ('id', 'students', 'plan_week', 'plan_section', 'plan_title', 'plan_description', 'plan_notes', 'plan_created', 'plan_created_by', 'plan_updated', 'plan_updated_by', 'student_plan_file',)
+        model = StudentPlanSection
+        fields = ('id', 'student_plan', 'section_week', 'section_number', 'section_title', 'section_description', 'section_notes', 'section_created', 'section_created_by', 'section_updated', 'section_updated_by', 'plan_section_file',)
 
     def create(self, validated_data):
-
-        plan_students = validated_data.pop('students')
         plan_files = validated_data.pop('files')
-        if 'student_plan_file' in validated_data:
-            student_plan_file = validated_data.pop('student_plan_file')
+        plan_id = validated_data.pop('student_plan')
 
-        student_plan = StudentPlan.objects.create(**validated_data)
-
-        for student_id in plan_students:
-            try:
-                student = User.objects.get(id=student_id)
-                student_plan.students.add(student)
-            except:
-                pass
+        if 'plan_section_file' in validated_data:
+            plan_section_file = validated_data.pop('plan_section_file')
+        try:
+            student_plan = StudentPlan.objects.get(id=plan_id)
+            plan_section = StudentPlanSection.objects.create(student_plan=student_plan, **validated_data)
+        except Exception, e:
+            pass
 
         for file in plan_files:
             try:
-                plan_file = StudentPlanFile.objects.create(student_plan=student_plan, plan_file=file, plan_file_created_by=student_plan.plan_created_by)
+                plan_file = StudentPlanFile.objects.create(plan_section=plan_section, plan_file=file, plan_file_created_by=plan_section.section_created_by)
                 plan_file.save()
             except:
                 pass
+
+        plan_section.save()
+        return plan_section
+
+    def update(self, instance, validated_data):
+        instance.section_week = validated_data.get('section_week', instance.section_week)
+        instance.section_number = validated_data.get('section_number', instance.section_number)
+        instance.section_title = validated_data.get('section_title', instance.section_title)
+        instance.section_description = validated_data.get('section_description', instance.section_description)
+        instance.section_notes = validated_data.get('section_notes', instance.section_notes)
+        instance.section_updated_by = validated_data.get('section_updated_bysection_updated_by', instance.section_updated_by)
+
+        if 'files' in validated_data:
+            files = validated_data.pop('files')
+            for file in files:
+                file_obj, created = StudentPlanFile.objects.update_or_create(plan_section=instance, plan_file=file)
+                if created:
+                    file_obj.plan_file_created_by = instance.section_updated_by
+                else:
+                    file_obj.plan_file_updated_by = instance.section_updated_by
+                file_obj.save()
+
+        instance.save()
+        return instance
+
+class StudentPlanSerializer(serializers.ModelSerializer):
+    plan_student = SimpleUserSerializer(many=True, required=False, read_only=True)
+    plan_section = StudentPlanSectionSerializer(many=True, required=False, allow_null=True, read_only=True)
+    plan_created_by = serializers.CharField(required=False)
+    plan_updated_by = serializers.CharField(required=False, allow_null=True)
+
+    class Meta:
+        model = StudentPlan
+        fields = ('id', 'plan_title', 'plan_description', 'plan_section', 'plan_created', 'plan_created_by', 'plan_updated', 'plan_updated_by', 'plan_student',)
+
+    def create(self, validated_data):
+        students = validated_data.pop('plan_student')
+        user = validated_data.pop('user')
+        try:
+            student_plan = StudentPlan.objects.create(plan_created_by=user, **validated_data)
+        except:
+            pass
+        if student_plan and students:
+            for student_id in students:
+                try:
+                    student = User.objects.get(id=student_id)
+                    student.student_plan = student_plan
+                    student.save()
+                except:
+                    pass
 
         student_plan.save()
         return student_plan
 
     def update(self, instance, validated_data):
-        print "VAL DATA === %s" %validated_data
-        instance.plan_week = validated_data.get('plan_week', instance.plan_week)
-        instance.plan_section = validated_data.get('plan_section', instance.plan_section)
+
+        user = validated_data.pop('user')
+
         instance.plan_title = validated_data.get('plan_title', instance.plan_title)
         instance.plan_description = validated_data.get('plan_description', instance.plan_description)
-        instance.plan_notes = validated_data.get('plan_notes', instance.plan_notes)
-        instance.plan_updated_by = validated_data.get('plan_updated_by', instance.plan_updated_by)
-        
-        if 'students' in validated_data:
-            upd_group = [int(x) for x in validated_data.pop('students')]
-            group_student = instance.students.all().values_list('id', flat=True)
+
+        if 'plan_student' in validated_data:
+            upd_group = [int(x) for x in validated_data.pop('plan_student')]
+            group_student = User.objects.filter(student_plan=instance).values_list('id', flat=True)
             out_group = set(upd_group) ^ set(group_student)
             in_group = set(upd_group) & set(group_student)
             if set(upd_group) != set(group_student):
                 for student_id in out_group:
                     if student_id in upd_group:
                         student = User.objects.get(id=student_id)
-                        instance.students.add(student)
+                        student.student_plan = instance
                     else:
                         student = User.objects.get(id=student_id)
-                        instance.students.remove(student)
+                        student.student_plan = None
+                    student.save()
 
-        if 'files' in validated_data:
-            files = validated_data.pop('files')
-            for file in files:
-                file_obj, created = StudentPlanFile.objects.update_or_create(student_plan=instance, plan_file=file)
-                if created:
-                    file_obj.plan_file_created_by = instance.plan_updated_by
-                else:
-                    file_obj.plan_file_updated_by = instance.plan_updated_by
-                file_obj.save()
+            instance.plan_updated_by = user
 
-
-        instance.save()
-
-        return instance
+            instance.save()
+            return instance
 
 class LocationSerializer(serializers.ModelSerializer):
 
@@ -234,15 +268,17 @@ class StudentNoteSerializer(serializers.ModelSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
     play_level_display = serializers.CharField(source='get_play_level_display', required=False)
-    email = serializers.CharField(required=False, allow_blank=True)
+    email = serializers.CharField(required=False, allow_blank=True, validators=[
+    UniqueValidator(
+        queryset=User.objects.all(),
+        message="My custom error",)])
     is_active = serializers.BooleanField(required=False)
     user_pic = serializers.CharField(required=False, allow_blank=True)
     student_goal = StudentGoalSerializer(many=True, required=False)
     student_log = StudentPracticeLogSerializer(many=True, required=False)
     student_objective = StudentObjectiveSerializer(many=True, required=False)
     student_wishlist = StudentWishListSerializer(many=True, required=False)
-    # student_plan = serializers.SerializerMethodField(required=False)
-    student_plan = StudentPlanSerializer(required=False, many=True)
+    student_plan = StudentPlanSerializer(required=False)
     student_material = serializers.SerializerMethodField(required=False)
     next_course = serializers.SerializerMethodField(required=False)
     location = LocationSerializer(required=False)
@@ -256,19 +292,25 @@ class UserSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'user_created', 'is_admin',)
 
     def create(self, validated_data):
-        cur_user = validated_data.pop('user')    
-        user = User.objects.create_user(**validated_data)
-        user.save()
+        cur_user = validated_data.pop('user')
+        try:  
+            user = User.objects.create_user(**validated_data)
+            user.save()
 
-        if cur_user.id:
-            user.user_created_by = cur_user
-        else:
-            user.user_created_by = user
+            if cur_user.id:
+                user.user_created_by = cur_user
+            else:
+                user.user_created_by = user
 
-        user.save()
-        send_basic_email.delay(user.id, 'CRE')
+            user.save()
+            send_basic_email.delay(user.id, 'CRE')
 
-        return user
+            return user
+        except Exception, e:
+            return Response({
+                'status': 'Bad request',
+                'message': 'Account could not be created with received data.'
+            }, status=status.HTTP_400_BAD_REQUEST)
 
     def update(self, instance, validated_data):
         instance.first_name = validated_data.get('first_name', instance.first_name)
@@ -306,19 +348,6 @@ class UserSerializer(serializers.ModelSerializer):
             update_session_auth_hash(self.context.get('request'), instance)
 
         return instance
-
-    # def get_student_plan(self, obj):
-    #     try:
-    #         print "TRIED === %s" %obj
-    #         queryset = StudentPlan.objects.get(students=obj)
-    #         print "QS === %s" %queryset
-    #         serializer = StudentPlanSerializer(queryset, many=True)
-    #         print "SER --- %s" %serializer
-    #         # print "SD --- %s" %serializer.data
-    #         return serializer.data
-    #     except:
-    #         print "PASSED %s" %obj
-    #         pass
 
     def get_student_material(self, obj):
         try:

@@ -40,6 +40,45 @@ class StudentNote(models.Model):
     def __unicode__(self):
         return smart_unicode(self.id)
 
+class StudentPlan(models.Model):
+
+    plan_title = models.CharField(max_length=50, null=True, blank=True)
+    plan_description = models.TextField(null=True, blank=True)
+    plan_created = models.DateTimeField(auto_now_add=True)
+    plan_created_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='plan_created_user', null=True, blank=True)
+    plan_updated = models.DateTimeField(auto_now_add=True)
+    plan_updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='plan_updated_user', null=True, blank=True)
+
+    def __unicode__(self):
+        return smart_unicode(self.plan_title)
+
+class StudentPlanSection(models.Model):
+
+    student_plan = models.ForeignKey(StudentPlan, related_name="plan_section")
+    section_week = models.CharField(max_length=3, null=True, blank=True)
+    section_number = models.CharField(max_length=3, null=True, blank=True)
+    section_title = models.CharField(max_length=50, blank=True)
+    section_description = models.TextField(blank=True)
+    section_notes = models.TextField(blank=True)
+    section_created = models.DateTimeField(auto_now_add=True)
+    section_created_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='section_created_user', null=True, blank=True)
+    section_updated = models.DateTimeField(auto_now_add=True)
+    section_updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='section_updated_user', null=True, blank=True)
+
+    def __unicode__(self):
+        return smart_unicode(self.section_title)    
+
+class StudentPlanFile(models.Model):
+
+    plan_section = models.ForeignKey(StudentPlanSection, related_name='plan_section_file', null=True, blank=True)
+    plan_file = models.FileField(upload_to=get_upload_file_name, null=True, blank=True)
+    plan_file_name = models.CharField(max_length=100, null=True, blank=True)
+    plan_file_created = models.DateTimeField(auto_now_add=True)
+    plan_file_created_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='plan_file_added_user', null=True, blank=True)
+    plan_file_updated = models.DateTimeField(auto_now=True)
+    plan_file_updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='plan_file_updated_user', null=True, blank=True)
+
+
 class UserManager(BaseUserManager):
 
     def create_user(self, username, password=None, **kwargs):
@@ -69,15 +108,16 @@ class UserManager(BaseUserManager):
         return user
 
 class User(AbstractBaseUser):
-    USER_RANK = ( 
+    USER_RANK = (
         ('1', 'White'),
-        ('2', 'Red'),
-        ('3', 'Yellow'),
+        ('2', 'Yellow'),
+        ('3', 'Orange'),
         ('4', 'Green'),
         ('5', 'Blue'),
         ('6', 'Purple'),
-        ('7', 'Brown'),
-        ('8', 'Black'),
+        ('7', 'Red'),
+        ('8', 'Brown'),
+        ('9', 'Black'),
     )
     username = models.CharField(max_length=50, unique=True, null=True, blank=True)
     email = models.EmailField(unique=True)
@@ -99,6 +139,7 @@ class User(AbstractBaseUser):
     course_reminder = models.BooleanField(default=True)
     practice_reminder = models.BooleanField(default=True)
     user_update = models.BooleanField(default=True)
+    student_plan = models.ForeignKey(StudentPlan, related_name="plan_student", null=True, blank=True)
 
 
     objects = UserManager()
@@ -151,9 +192,10 @@ class StudentPracticeLog(models.Model):
     PRACTICE_CATEGORIES = (
         ('LEAD_TECHNIQUE', 'Lead Technique'),
         ('RHYTHM_TECHNIQUE', 'Rhythm Technique'),
-        ('THEORY', 'Theory'),
-        ('REPERTOIRE', 'Repertoire'),
-        ('APPLIED_THEORY', 'Applied Theory'),
+        ('FRETBOARD', 'Fretboard Knowledge'),
+        ('THEORY', 'Music Theory Concepts'),
+        ('REPERTOIRE', 'Songs and Repertoire'),
+        ('CREATIVITY', 'Creativity'),
     )
     student = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='student_log')
     practice_category = models.CharField(max_length=20, choices=PRACTICE_CATEGORIES, null=True, blank=True)
@@ -233,31 +275,4 @@ class StudentEmail(models.Model):
     title = models.CharField(max_length=250, null=True, blank=True)
     body = models.TextField(null=True, blank=True)
     footer = models.TextField(null=True, blank=True)
-
-class StudentPlan(models.Model):
-
-    students = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='student_plan', blank=True)
-    plan_week = models.CharField(max_length=3, null=True, blank=True)
-    plan_section = models.CharField(max_length=3, null=True, blank=True)
-    plan_title = models.CharField(max_length=50, null=True, blank=True)
-    plan_description = models.TextField(null=True, blank=True)
-    plan_notes = models.TextField(null=True, blank=True)
-    plan_created = models.DateTimeField(auto_now_add=True)
-    plan_created_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='plan_created_user', null=True, blank=True)
-    plan_updated = models.DateTimeField(auto_now_add=True)
-    plan_updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='plan_updated_user', null=True, blank=True)
-
-    def __unicode__(self):
-        return smart_unicode(self.plan_title)
-
-class StudentPlanFile(models.Model):
-
-    student_plan = models.ForeignKey(StudentPlan, related_name='student_plan_file', null=True, blank=True)
-    plan_file = models.FileField(upload_to=get_upload_file_name, null=True, blank=True)
-    plan_file_name = models.CharField(max_length=100, null=True, blank=True)
-    plan_file_created = models.DateTimeField(auto_now_add=True)
-    plan_file_created_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='plan_file_added_user', null=True, blank=True)
-    plan_file_updated = models.DateTimeField(auto_now=True)
-    plan_file_updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='plan_file_updated_user', null=True, blank=True)
-
 

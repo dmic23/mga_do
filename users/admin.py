@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.models import Group
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
-from users.models import User, Location, StudentNote, StudentGoal, StudentPracticeLog, StudentObjective, StudentWishList, StudentMaterial, StudentEmail, StudentPlan, StudentPlanFile
+from users.models import User, Location, StudentNote, StudentGoal, StudentPracticeLog, StudentObjective, StudentWishList, StudentMaterial, StudentEmail, StudentPlan, StudentPlanSection, StudentPlanFile
 
 class UserCreationForm(forms.ModelForm):
 
@@ -89,7 +89,7 @@ class UserAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ('Authorization and Login info', {'fields': ('username', 'password',)}),
-        ('Personal info', {'fields': ('first_name', 'last_name', 'email', 'date_of_birth', 'location', 'play_level', 'user_pic', 'recurring_credit', 'user_credit',)}),
+        ('Personal info', {'fields': ('first_name', 'last_name', 'email', 'date_of_birth', 'location', 'play_level', 'user_pic', 'recurring_credit', 'user_credit', 'student_plan',)}),
         (None, {'fields': ('last_login', 'user_created_by', 'user_created', 'user_updated_by', 'user_updated',)}),
         ('Permissions', {'fields': ('is_admin', 'is_active',)}),
     )
@@ -171,18 +171,38 @@ class StudentPlanFileInLine(admin.StackedInline):
     model = StudentPlanFile
     extra = 0
 
-class StudentPlanAdmin(admin.ModelAdmin):
+class StudentPlanSectionAdmin(admin.ModelAdmin):
 
     inlines = [
         StudentPlanFileInLine,
     ]
 
     class Meta:
+        model = StudentPlanSection
+
+    list_display = ('student_plan', 'section_week', 'section_number', 'section_title',)
+    list_filter = ('student_plan', 'section_week', 'section_number', 'section_title',)
+    # ordering = ()
+
+admin.site.register(StudentPlanSection, StudentPlanSectionAdmin)
+
+class StudentPlanSectionInLine(admin.StackedInline):
+    model = StudentPlanSection
+    extra = 0
+    # inlines = [StudentPlanFileInLine,]
+
+class StudentPlanAdmin(admin.ModelAdmin):
+
+    inlines = [
+        StudentPlanSectionInLine,
+    ]
+
+    class Meta:
         model = StudentPlan
 
-    list_display = ('plan_week', 'plan_section', 'plan_title', 'plan_created',)
-    list_filter = ('plan_week', 'plan_section', 'plan_title', 'plan_created',)
-    ordering = ('plan_week', 'plan_section',)
+    list_display = ('plan_title', 'plan_created',)
+    list_filter = ('plan_title', 'plan_created',)
+    # ordering = ()
 
 admin.site.register(StudentPlan, StudentPlanAdmin)
 
