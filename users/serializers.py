@@ -23,6 +23,13 @@ class StudentGoalSerializer(serializers.ModelSerializer):
         model = StudentGoal
         fields = ('id', 'student', 'goal', 'goal_target_date', 'goal_complete', 'goal_complete_date', 'goal_notes', 'goal_created',)
 
+class SimpleStudentGoalSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = StudentGoal
+        fields = ('id', 'goal_target_date', 'goal_complete', 'goal_complete_date', 'goal_created',)
+
+
 class StudentPracticeLogSerializer(serializers.ModelSerializer):
     practice_category_display = serializers.SerializerMethodField(source='practice_category', required=False)
     practice_date = serializers.DateTimeField(format=None, input_formats=None, required=False)
@@ -35,6 +42,18 @@ class StudentPracticeLogSerializer(serializers.ModelSerializer):
     def get_practice_category_display(self, obj):
         return obj.get_practice_category_display();
 
+class SimplePracticeLogSerializer(serializers.ModelSerializer):
+    practice_category_display = serializers.SerializerMethodField(source='practice_category', required=False)
+    practice_date = serializers.DateTimeField(format=None, input_formats=None, required=False)
+
+    class Meta:
+        model = StudentPracticeLog
+        fields = ('id', 'practice_category', 'practice_category_display', 'practice_item', 'practice_time', 'practice_speed', 'practice_date', 'practice_item_created',)
+
+    def get_practice_category_display(self, obj):
+        return obj.get_practice_category_display();
+
+
 class StudentObjectiveSerializer(serializers.ModelSerializer):
     objective = serializers.CharField(required=False)
     student = serializers.CharField(required=False)
@@ -44,13 +63,27 @@ class StudentObjectiveSerializer(serializers.ModelSerializer):
         model = StudentObjective
         fields = ('id', 'student', 'objective', 'objective_complete', 'objective_complete_date', 'objective_notes', 'objective_visible', 'objective_priority', 'objective_created',)
 
+class SimpleStudentObjectiveSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = StudentObjective
+        fields = ('id', 'objective_complete', 'objective_complete_date', 'objective_visible', 'objective_priority', 'objective_created',)
+
+
 class StudentWishListSerializer(serializers.ModelSerializer):
     wish_item = serializers.CharField(required=False)
     student = serializers.CharField(required=False)
+    wish_item_complete_date = serializers.DateTimeField(format=None, input_formats=None, required=False)
 
     class Meta:
         model = StudentWishList
         fields = ('id', 'student', 'wish_item', 'wish_item_complete', 'wish_item_complete_date', 'wish_item_notes', 'wish_item_created',)
+
+class SimpleStudentWishListSerilizer(serializers.ModelSerializer):
+
+    class Meta:
+        model = StudentWishList
+        fields = ('id', 'wish_item_complete', 'wish_item_complete_date', 'wish_item_created',)
 
 
 class SimpleUserSerializer(serializers.ModelSerializer):
@@ -265,6 +298,18 @@ class StudentNoteSerializer(serializers.ModelSerializer):
         model = StudentNote
         fields = ('id', 'student', 'note', 'note_created', 'note_created_by', 'note_updated',)
 
+
+class UserLeaderBoardSerializer(serializers.ModelSerializer):
+
+    play_level_display = serializers.CharField(source='get_play_level_display', required=False)
+    student_goal = SimpleStudentGoalSerializer(many=True, required=False)
+    student_log = SimplePracticeLogSerializer(many=True, required=False)
+    student_objective = SimpleStudentObjectiveSerializer(many=True, required=False)
+    student_wishlist = SimpleStudentWishListSerilizer(many=True, required=False)
+
+    class Meta:
+        model = User
+        fields = ('id', 'is_active', 'user_pic', 'first_name', 'last_name', 'email', 'play_level', 'play_level_display', 'student_goal', 'student_log', 'student_objective', 'student_wishlist',)
 
 class UserSerializer(serializers.ModelSerializer):
     play_level_display = serializers.CharField(source='get_play_level_display', required=False)

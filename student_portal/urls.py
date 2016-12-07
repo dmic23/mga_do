@@ -8,10 +8,12 @@ from rest_framework_jwt.views import obtain_jwt_token,refresh_jwt_token, verify_
 from student_portal.views import IndexView
 from forum.views import CategoryViewSet, TopicViewSet, MessageViewSet
 from schedule.views import CourseViewSet, CourseScheduleViewSet, RemoveCourseScheduleViewSet
-from users.views import LoginView, LogoutView, UserViewSet, LocationViewSet, StudentNoteViewSet, StudentGoalsViewSet, StudentPracticeLogViewSet, StudentObjectiveViewSet, StudentWishListViewSet, StudentMaterialsViewSet, StudentPlanViewSet, StudentPlanSectionViewSet, StudentPlanFileViewSet
+from users.views import LoginView, LogoutView, UserViewSet, SimpleUserViewSet, UserLeaderBoardViewSet, LocationViewSet, StudentNoteViewSet, StudentGoalsViewSet, StudentPracticeLogViewSet, StudentObjectiveViewSet, StudentWishListViewSet, StudentMaterialsViewSet, StudentPlanViewSet, StudentPlanSectionViewSet, StudentPlanFileViewSet
 
 router = routers.SimpleRouter()
 router.register(r'users', UserViewSet)
+router.register(r'users-simple', SimpleUserViewSet)
+router.register(r'users-leaderboard', UserLeaderBoardViewSet)
 router.register(r'locations', LocationViewSet)
 router.register(r'student-notes', StudentNoteViewSet)
 router.register(r'student-goals', StudentGoalsViewSet)
